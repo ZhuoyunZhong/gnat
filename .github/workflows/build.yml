@@ -26,7 +26,7 @@ jobs:
       - name: Upgrade pip and install dependencies
         run: |
           pip install --upgrade pip
-          pip install cibuildwheel==2.5.0 pytest numpy setuptools twine
+          pip install cibuildwheel pytest numpy setuptools twine
 
       - name: Install pybind11
         run: |
