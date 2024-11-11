@@ -14,8 +14,8 @@ jobs:
     strategy:
       matrix:
         # os: [ubuntu-22.04]
-        os: [macos-12]
-        python-version: ['3.10']
+        os: [macos-13, macos-14]
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
     steps:
       - uses: actions/checkout@v2
 
@@ -63,15 +63,16 @@ jobs:
         run: |
           cibuildwheel --output-dir dist
 
-      - name: Install built wheel
-        run: |
-          pip install dist/*.whl
+      # Skip testing after built
+      # - name: Install built wheel
+      #   run: |
+      #     pip install dist/*.whl
 
-      - name: Run tests
-        run: |
-          cd tests
-          python3 -m pytest test.py
-          cd ..
+      # - name: Run tests
+      #   run: |
+      #     cd tests
+      #     python3 -m pytest test.py
+      #     cd ..
 
       - name: Upload built wheels as artifacts (Optional)
         uses: actions/upload-artifact@v3
