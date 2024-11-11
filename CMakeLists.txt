@@ -17,7 +17,38 @@ list(APPEND CMAKE_PREFIX_PATH ${PYBIND11_CMAKE_DIR})
 find_package(pybind11 REQUIRED)
 
 # Find Eigen3 and Boost
-list(APPEND CMAKE_PREFIX_PATH "/usr/include/eigen3" "/usr/include/boost")
+if(WIN32)
+    # Find Eigen path with Chocolatey
+    execute_process(
+        COMMAND powershell -Command "(Get-ChildItem -Path C:/ProgramData/chocolatey/lib/eigen* -Directory | Select-Object -ExpandProperty FullName)"
+        OUTPUT_VARIABLE EIGEN_PATH
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    list(APPEND CMAKE_PREFIX_PATH "${EIGEN_PATH}/include")
+    # Find Boost path with Chocolatey
+    execute_process(
+        COMMAND powershell -Command "(Get-ChildItem -Path C:/ProgramData/chocolatey/lib/boost* -Directory | Select-Object -ExpandProperty FullName)"
+        OUTPUT_VARIABLE BOOST_PATH
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    list(APPEND CMAKE_PREFIX_PATH "${BOOST_PATH}/include")
+elseif(APPLE)
+    # macOS: Use Homebrew to find Eigen and Boost
+    execute_process(
+        COMMAND brew --prefix eigen
+        OUTPUT_VARIABLE EIGEN3_PREFIX
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    execute_process(
+        COMMAND brew --prefix boost
+        OUTPUT_VARIABLE BOOST_PREFIX
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    list(APPEND CMAKE_PREFIX_PATH ${EIGEN3_PREFIX} ${BOOST_PREFIX})
+elseif(UNIX)
+    # Linux: Assume default paths for system-installed libraries
+    list(APPEND CMAKE_PREFIX_PATH "/usr/share/eigen3/cmake" "/usr/include/boost")
+endif()
 find_package(Eigen3 REQUIRED)
 find_package(Boost REQUIRED)
 
