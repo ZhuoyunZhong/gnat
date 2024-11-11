@@ -26,7 +26,7 @@ setup(
     include_package_data=True,
     python_requires=">=3.8",
     cmake_args=["-G", cmake_generator],
-    install_requires=["pybind11>=2.5.0", "scikit-build"],
+    install_requires=["pybind11", "scikit-build"],
     classifiers=[
         "Programming Language :: Python :: 3",
         "Programming Language :: C++",
