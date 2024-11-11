@@ -4,8 +4,6 @@ import math
 import time
 
 import gnat
-from sklearn.neighbors import BallTree
-from scipy.spatial.transform import Rotation as R
 
 
 # Test using SE3 points
@@ -16,6 +14,13 @@ def se3_distance(p1, p2, w=1.0):
     return d_position + w * d_rotation
 
 
+# Rotation sampling
+def sample_rotation():
+    quat = np.random.uniform(-1, 1, 4)
+    quat /= np.linalg.norm(quat)
+    return quat
+
+
 def test_gnat():
     # Create a set of random 2D points
     data_points = np.array(
@@ -24,7 +29,7 @@ def test_gnat():
                 random.uniform(0, 100),
                 random.uniform(0, 100),
                 random.uniform(0, 100),
-                *R.random().as_quat(),
+                *sample_rotation(),
             )
             for _ in range(10000)
         ]
