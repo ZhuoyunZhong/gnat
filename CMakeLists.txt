@@ -8,6 +8,13 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Find pybind11
+# Find the path to pybind11 using Python
+execute_process(
+    COMMAND python3 -c "import pybind11; print(pybind11.get_cmake_dir())"
+    OUTPUT_VARIABLE PYBIND11_CMAKE_DIR
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+list(APPEND CMAKE_PREFIX_PATH ${PYBIND11_CMAKE_DIR})
 find_package(pybind11 REQUIRED)
 
 # Find Eigen3
