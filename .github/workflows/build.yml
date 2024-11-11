@@ -32,6 +32,22 @@ jobs:
         run: |
           pip install pybind11[global]
 
+      - name: Install Eigen and Boost on Linux
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libeigen3-dev libboost-all-dev
+
+      - name: Install Eigen and Boost on macOS
+        if: runner.os == 'macOS'
+        run: |
+          brew install eigen boost
+
+      - name: Install Eigen on Windows
+        if: runner.os == 'Windows'
+        run: |
+          choco install eigen boost -y
+
       - name: Build wheels
         run: |
           cibuildwheel --output-dir dist
