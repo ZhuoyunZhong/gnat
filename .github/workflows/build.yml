@@ -28,6 +28,11 @@ jobs:
           pip install --upgrade pip
           pip install cibuildwheel==2.5.0 pytest
 
+      - name: Set CMAKE_PREFIX_PATH for pybind11
+        run: |
+          export CMAKE_PREFIX_PATH=$(python3 -c "import pybind11; print(pybind11.get_cmake_dir())")
+          cibuildwheel --output-dir dist
+
       - name: Build wheels
         run: |
           cibuildwheel --output-dir dist
