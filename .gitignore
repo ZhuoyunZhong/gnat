@@ -1,0 +1,17 @@
+# Ignore build directories
+build/
+_skbuild/
+*.egg-info/
+dist/
+
+# Ignore compiled files
+*.so
+*.pyd
+*.dll
+*.dylib
+__pycache__/
+*.py[cod]
+
+# Ignore cache
+.cache/
+.vscode/
