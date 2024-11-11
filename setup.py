@@ -5,7 +5,7 @@ import sys
 
 # Determine the CMake generator based on the operating system
 if sys.platform == "win32":
-    cmake_generator = "Visual Studio 16 2019"
+    cmake_generator = "NMake Makefiles"
 elif sys.platform == "darwin":  # macOS
     cmake_generator = "Unix Makefiles"
 else:  # Linux and other platforms
