@@ -63,17 +63,21 @@ jobs:
         run: |
           cibuildwheel --output-dir dist
 
-      - name: Upload built wheels as artifacts (Optional)
-        uses: actions/upload-artifact@v3
-        with:
-          name: built-wheels
-          path: dist/
+      - name: Install built wheel
+        run: |
+          pip install dist/*.whl
 
       - name: Run tests
         run: |
           cd tests
           python3 -m pytest test.py
           cd ..
+
+      - name: Upload built wheels as artifacts (Optional)
+        uses: actions/upload-artifact@v3
+        with:
+          name: built-wheels
+          path: dist/
 
       - name: Upload wheels to PyPI
         if: startsWith(github.ref, 'refs/tags/')
