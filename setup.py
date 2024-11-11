@@ -6,8 +6,10 @@ import sys
 # Determine the CMake generator based on the operating system
 if sys.platform == "win32":
     cmake_generator = "Visual Studio 16 2019"
-else:
-    cmake_generator = "Ninja"
+elif sys.platform == "darwin":  # macOS
+    cmake_generator = "Unix Makefiles"
+else:  # Linux and other platforms
+    cmake_generator = "Unix Makefiles"
 
 setup(
     name="gnat",
@@ -18,8 +20,8 @@ setup(
     author="Zhuoyun Zhong",
     author_email="zzy905954450@gmail.com",
     url="https://github.com/ZhuoyunZhong/gnat",
-    packages=find_packages(where="gnat"),
-    package_dir={"": "gnat"},
+    packages=find_packages(),
+    package_dir={"gnat": "gnat"},
     cmake_install_dir="gnat",
     include_package_data=True,
     python_requires=">=3.8",

@@ -16,10 +16,28 @@ def se3_distance(p1, p2, w=1.0):
     return d_position + w * d_rotation
 
 
-def gnat_test(data_points, query_point, distance_function, k, radius):
+def test_gnat():
+    # Create a set of random 2D points
+    data_points = np.array(
+        [
+            (
+                random.uniform(0, 100),
+                random.uniform(0, 100),
+                random.uniform(0, 100),
+                *R.random().as_quat(),
+            )
+            for _ in range(10000)
+        ]
+    )
+
+    # Define the query point
+    query_point = np.array([50, 50, 50, 0, 0, 0, 1])
+    k = 5
+    radius = 2
+
     # Initialize OMPL GNAT with the custom distance function
     nn = gnat.NearestNeighborsGNAT()
-    nn.setDistanceFunction(distance_function)
+    nn.setDistanceFunction(se3_distance)
 
     # Build data structure
     start_time = time.time()
@@ -73,19 +91,4 @@ if __name__ == "__main__":
     np.random.seed(42)
     np.set_printoptions(suppress=True, precision=3)
 
-    # Create a set of random 2D points
-    data_points = np.array(
-        [
-            (
-                random.uniform(0, 100),
-                random.uniform(0, 100),
-                random.uniform(0, 100),
-                *R.random().as_quat(),
-            )
-            for _ in range(10000)
-        ]
-    )
-
-    # Define the query point
-    query_point = np.array([50, 50, 50, 0, 0, 0, 1])
-    gnat_test(data_points, query_point, se3_distance, 5, 2)
+    test_gnat()
