@@ -21,7 +21,7 @@ set_package_properties(Boost PROPERTIES
     URL "https://www.boost.org"
     PURPOSE "Used throughout OMPL for data serialization, graphs, etc.")
 set(Boost_USE_MULTITHREADED ON)
-find_package(Boost 1.58 REQUIRED COMPONENTS serialization filesystem system program_options)
+find_package(Boost REQUIRED COMPONENTS serialization filesystem system program_options)
 
 set_package_properties(Eigen3 PROPERTIES
     URL "http://eigen.tuxfamily.org"
