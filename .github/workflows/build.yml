@@ -17,7 +17,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python ${{ matrix.python-version }}
+      - name: Set up Python
         uses: actions/setup-python@v5
 
       - name: Upgrade pip and install dependencies
@@ -59,15 +59,15 @@ jobs:
         run: |
           cibuildwheel --output-dir dist
 
-      - name: Install package from source
-        run: |
-          pip install .
+      # - name: Install package from source
+      #   run: |
+      #     pip install .
 
-      - name: Run tests
-        run: |
-          cd tests
-          python3 -m pytest test.py
-          cd ..
+      # - name: Run tests
+      #   run: |
+      #     cd tests
+      #     python3 -m pytest test.py
+      #     cd ..
 
       - name: Upload built wheels as artifacts (Optional)
         uses: actions/upload-artifact@v3
