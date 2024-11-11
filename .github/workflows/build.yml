@@ -13,7 +13,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macos-13, macos-latest]
+        # os: [windows-latest, macos-13, macos-latest]
+        os: [windows-latest]
         python-version: ['3.12']
     steps:
       - uses: actions/checkout@v4
