@@ -22,7 +22,7 @@ setup(
     package_dir={"": "gnat"},
     cmake_install_dir="gnat",
     include_package_data=True,
-    python_requires=">=3.6",
+    python_requires=">=3.8",
     cmake_args=["-G", cmake_generator],
     install_requires=["pybind11>=2.5.0", "scikit-build"],
     classifiers=[
