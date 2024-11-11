@@ -37,7 +37,7 @@ def test_gnat():
 
     # Initialize OMPL GNAT with the custom distance function
     nn = gnat.NearestNeighborsGNAT()
-    nn.setDistanceFunction(se3_distance)
+    nn.set_distance_function(se3_distance)
 
     # Build data structure
     start_time = time.time()
@@ -62,7 +62,7 @@ def test_gnat():
     # Perform k-nearest neighbors search with OMPL GNAT
     start_time = time.time()
 
-    nearest_k = nn.nearestK(query_point, k)
+    nearest_k = nn.nearest_k(query_point, k)
     nearest_k = np.array(nearest_k)
 
     gnat_k_search_time = time.time() - start_time
@@ -75,7 +75,7 @@ def test_gnat():
     # Perform range search with OMPL GNAT
     start_time = time.time()
 
-    nearest_r = nn.nearestR(query_point, radius)
+    nearest_r = nn.nearest_r(query_point, radius)
     nearest_r = np.array(nearest_r)
 
     ompl_gnat_range_search_time = time.time() - start_time

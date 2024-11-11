@@ -5,7 +5,6 @@
 #include "ompl/datastructures/NearestNeighborsGNAT.h"
 
 namespace py = pybind11;
-namespace ompl = ::ompl; // Ensure the ompl namespace is accessible
 
 // Define the type you will use with the GNAT.
 // For example, using a vector of doubles to represent a point in space.
