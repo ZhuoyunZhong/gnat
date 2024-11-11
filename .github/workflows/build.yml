@@ -28,6 +28,10 @@ jobs:
           pip install --upgrade pip
           pip install cibuildwheel==2.5.0 pytest
 
+      - name: Install pybind11
+        run: |
+          pip install pybind11[global]
+
       - name: Build wheels
         run: |
           cibuildwheel --output-dir dist
