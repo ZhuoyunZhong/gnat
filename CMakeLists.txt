@@ -8,7 +8,6 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Find pybind11
-# Find the path to pybind11 using Python
 execute_process(
     COMMAND python3 -c "import pybind11; print(pybind11.get_cmake_dir())"
     OUTPUT_VARIABLE PYBIND11_CMAKE_DIR
@@ -17,10 +16,9 @@ execute_process(
 list(APPEND CMAKE_PREFIX_PATH ${PYBIND11_CMAKE_DIR})
 find_package(pybind11 REQUIRED)
 
-# Find Eigen3
-find_package(Eigen3 3.3 REQUIRED NO_MODULE)
-
-# Find Boost
+# Find Eigen3 and Boost
+list(APPEND CMAKE_PREFIX_PATH "/usr/include/eigen3" "/usr/include/boost")
+find_package(Eigen3 REQUIRED)
 find_package(Boost REQUIRED)
 
 # Include directories
