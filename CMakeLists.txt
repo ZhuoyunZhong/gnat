@@ -30,8 +30,8 @@ find_package(Eigen3 REQUIRED)
 
 # Include directories
 include_directories(
-#     ${EIGEN3_INCLUDE_DIRS}
-#     ${Boost_INCLUDE_DIRS}
+    ${EIGEN3_INCLUDE_DIRS}
+    ${Boost_INCLUDE_DIRS}
     ${PROJECT_SOURCE_DIR}
 )
 
