@@ -37,7 +37,8 @@
 #ifndef OMPL_DATASTRUCTURES_GREEDY_K_CENTERS_
 #define OMPL_DATASTRUCTURES_GREEDY_K_CENTERS_
 
-#include "ompl/util/RandomNumbers.h"
+// #include "ompl/util/RandomNumbers.h"
+#include <random>
 #include <functional>
 #include <Eigen/Core>
 
@@ -90,7 +91,9 @@ namespace ompl
             if ((std::size_t)dists.rows() < data.size() || (std::size_t)dists.cols() < k)
                 dists.resize(std::max(2u * (std::size_t)dists.rows() + 1u, data.size()), k);
             // first center is picked randomly
-            centers.push_back(rng_.uniformInt(0, data.size() - 1));
+            // centers.push_back(rng_.uniformInt(0, data.size() - 1));
+            std::uniform_int_distribution<unsigned int> dist(0, data.size() - 1);
+            centers.push_back(dist(rng_));
             for (unsigned i = 1; i < k; ++i)
             {
                 unsigned ind = 0;
@@ -124,7 +127,8 @@ namespace ompl
         DistanceFunction distFun_;
 
         /** Random number generator used to select first center */
-        RNG rng_;
+        // RNG rng_;
+        std::mt19937 rng_;
     };
 }  // namespace ompl
 

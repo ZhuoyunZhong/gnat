@@ -39,16 +39,16 @@
 
 #include "ompl/datastructures/NearestNeighbors.h"
 #include "ompl/datastructures/GreedyKCenters.h"
-#ifdef GNAT_SAMPLER
-#include "ompl/datastructures/PDF.h"
-#endif
+// #ifdef GNAT_SAMPLER
+// #include "ompl/datastructures/PDF.h"
+// #endif
 #include <algorithm>
 #include <iostream>
 #include <queue>
 #include <random>
 #include <unordered_set>
 #include <utility>
-#include "ompl/util/Exception.h"
+// #include "ompl/util/Exception.h"
 
 namespace ompl
 {
@@ -95,10 +95,10 @@ namespace ompl
         NearestNeighborsGNAT(unsigned int degree = 8, unsigned int minDegree = 4, unsigned int maxDegree = 12,
                              unsigned int maxNumPtsPerLeaf = 50, unsigned int removedCacheSize = 500,
                              bool rebalancing = false
-#ifdef GNAT_SAMPLER
-                             ,
-                             double estimatedDimension = 6.0
-#endif
+// #ifdef GNAT_SAMPLER
+//                              ,
+//                              double estimatedDimension = 6.0
+// #endif
                              )
           : NearestNeighbors<_T>()
           , degree_(degree)
@@ -107,9 +107,9 @@ namespace ompl
           , maxNumPtsPerLeaf_(maxNumPtsPerLeaf)
           , rebuildSize_(rebalancing ? maxNumPtsPerLeaf * degree : std::numeric_limits<std::size_t>::max())
           , removedCacheSize_(removedCacheSize)
-#ifdef GNAT_SAMPLER
-          , estimatedDimension_(estimatedDimension)
-#endif
+// #ifdef GNAT_SAMPLER
+//           , estimatedDimension_(estimatedDimension)
+// #endif
         {
         }
 
@@ -165,9 +165,9 @@ namespace ompl
             else if (!data.empty())
             {
                 tree_ = new Node(degree_, maxNumPtsPerLeaf_, data[0]);
-#ifdef GNAT_SAMPLER
-                tree_->subtreeSize_ = data.size();
-#endif
+// #ifdef GNAT_SAMPLER
+//                 tree_->subtreeSize_ = data.size();
+// #endif
                 tree_->data_.insert(tree_->data_.end(), data.begin() + 1, data.end());
                 size_ += data.size();
                 if (tree_->needToSplit(*this))
@@ -215,7 +215,8 @@ namespace ompl
                 if (!nbhQueue.empty())
                     return *nbhQueue.top().second;
             }
-            throw Exception("No elements found in nearest neighbors data structure");
+            // throw Exception("No elements found in nearest neighbors data structure");
+            return _T();
         }
 
         /// Return the k nearest neighbors in sorted order
@@ -249,16 +250,16 @@ namespace ompl
             return size_;
         }
 
-#ifdef GNAT_SAMPLER
-        /// Sample an element from the GNAT.
-        const _T &sample(RNG &rng) const
-        {
-            if (!size())
-                throw Exception("Cannot sample from an empty tree");
-            else
-                return tree_->sample(*this, rng);
-        }
-#endif
+// #ifdef GNAT_SAMPLER
+//         /// Sample an element from the GNAT.
+//         const _T &sample(RNG &rng) const
+//         {
+//             if (!size())
+//                 throw Exception("Cannot sample from an empty tree");
+//             else
+//                 return tree_->sample(*this, rng);
+//         }
+// #endif
 
         void list(std::vector<_T> &data) const override
         {
@@ -396,10 +397,10 @@ namespace ompl
               , maxRadius_(-minRadius_)
               , minRange_(degree, minRadius_)
               , maxRange_(degree, maxRadius_)
-#ifdef GNAT_SAMPLER
-              , subtreeSize_(1)
-              , activity_(0)
-#endif
+// #ifdef GNAT_SAMPLER
+//               , subtreeSize_(1)
+//               , activity_(0)
+// #endif
             {
                 // The "+1" is needed because we add an element before we check whether to split
                 data_.reserve(capacity + 1);
@@ -417,18 +418,18 @@ namespace ompl
             {
                 if (minRadius_ > dist)
                     minRadius_ = dist;
-#ifndef GNAT_SAMPLER
+// #ifndef GNAT_SAMPLER
                 if (maxRadius_ < dist)
                     maxRadius_ = dist;
-#else
-                if (maxRadius_ < dist)
-                {
-                    maxRadius_ = dist;
-                    activity_ = 0;
-                }
-                else
-                    activity_ = std::max(-32, activity_ - 1);
-#endif
+// #else
+//                 if (maxRadius_ < dist)
+//                 {
+//                     maxRadius_ = dist;
+//                     activity_ = 0;
+//                 }
+//                 else
+//                     activity_ = std::max(-32, activity_ - 1);
+// #endif
             }
             /// \brief Update minRange_[i] and maxRange_[i], given that an
             /// element was added to the i-th child of the parent that has
@@ -443,9 +444,9 @@ namespace ompl
             /// Add an element to the tree rooted at this node.
             void add(GNAT &gnat, const _T &data)
             {
-#ifdef GNAT_SAMPLER
-                subtreeSize_++;
-#endif
+// #ifdef GNAT_SAMPLER
+//                 subtreeSize_++;
+// #endif
                 if (children_.empty())
                 {
                     data_.push_back(data);
@@ -527,10 +528,10 @@ namespace ompl
                     // singleton
                     if (child->minRadius_ >= std::numeric_limits<double>::infinity())
                         child->minRadius_ = child->maxRadius_ = 0.;
-#ifdef GNAT_SAMPLER
-                    // set subtree size
-                    child->subtreeSize_ = child->data_.size() + 1;
-#endif
+// #ifdef GNAT_SAMPLER
+//                     // set subtree size
+//                     child->subtreeSize_ = child->data_.size() + 1;
+// #endif
                 }
                 // this does more than clear(); it also sets capacity to 0 and frees the memory
                 std::vector<_T> tmp;
@@ -662,34 +663,34 @@ namespace ompl
                 }
             }
 
-#ifdef GNAT_SAMPLER
-            double getSamplingWeight(const GNAT &gnat) const
-            {
-                double minR = std::numeric_limits<double>::max();
-                for (auto minRange : minRange_)
-                    if (minRange < minR && minRange > 0.0)
-                        minR = minRange;
-                minR = std::max(minR, maxRadius_);
-                return std::pow(minR, gnat.estimatedDimension_) / (double)subtreeSize_;
-            }
-            const _T &sample(const GNAT &gnat, RNG &rng) const
-            {
-                if (children_.size() != 0)
-                {
-                    if (rng.uniform01() < 1. / (double)subtreeSize_)
-                        return pivot_;
-                    PDF<const Node *> distribution;
-                    for (const auto &child : children_)
-                        distribution.add(child, child->getSamplingWeight(gnat));
-                    return distribution.sample(rng.uniform01())->sample(gnat, rng);
-                }
-                else
-                {
-                    unsigned int i = rng.uniformInt(0, data_.size());
-                    return (i == data_.size()) ? pivot_ : data_[i];
-                }
-            }
-#endif
+// #ifdef GNAT_SAMPLER
+//             double getSamplingWeight(const GNAT &gnat) const
+//             {
+//                 double minR = std::numeric_limits<double>::max();
+//                 for (auto minRange : minRange_)
+//                     if (minRange < minR && minRange > 0.0)
+//                         minR = minRange;
+//                 minR = std::max(minR, maxRadius_);
+//                 return std::pow(minR, gnat.estimatedDimension_) / (double)subtreeSize_;
+//             }
+//             const _T &sample(const GNAT &gnat, RNG &rng) const
+//             {
+//                 if (children_.size() != 0)
+//                 {
+//                     if (rng.uniform01() < 1. / (double)subtreeSize_)
+//                         return pivot_;
+//                     PDF<const Node *> distribution;
+//                     for (const auto &child : children_)
+//                         distribution.add(child, child->getSamplingWeight(gnat));
+//                     return distribution.sample(rng.uniform01())->sample(gnat, rng);
+//                 }
+//                 else
+//                 {
+//                     unsigned int i = rng.uniformInt(0, data_.size());
+//                     return (i == data_.size()) ? pivot_ : data_[i];
+//                 }
+//             }
+// #endif
 
             void list(const GNAT &gnat, std::vector<_T> &data) const
             {
@@ -718,10 +719,10 @@ namespace ompl
                 for (auto &data : node.data_)
                     out << data << '\t';
                 out << "\nthis:\t" << &node;
-#ifdef GNAT_SAMPLER
-                out << "\nsubtree size:\t" << node.subtreeSize_;
-                out << "\nactivity:\t" << node.activity_;
-#endif
+// #ifdef GNAT_SAMPLER
+//                 out << "\nsubtree size:\t" << node.subtreeSize_;
+//                 out << "\nactivity:\t" << node.activity_;
+// #endif
                 out << "\nchildren:\n";
                 for (auto &child : node.children_)
                     out << child << '\t';
@@ -751,15 +752,15 @@ namespace ompl
             /// \brief The child nodes of this node. By definition, only internal nodes
             /// have child nodes.
             std::vector<Node *> children_;
-#ifdef GNAT_SAMPLER
-            /// Number of elements stored in the subtree rooted at this Node
-            unsigned int subtreeSize_;
-            /// \brief The extent to which a Node's maxRadius_ is increasing. A value of 0
-            /// means the Node's maxRadius_ was increased the last time an element was added,
-            /// while a negative value i means the Node hasn't expanded the last -i times
-            /// an element was added.
-            int activity_;
-#endif
+// #ifdef GNAT_SAMPLER
+//             /// Number of elements stored in the subtree rooted at this Node
+//             unsigned int subtreeSize_;
+//             /// \brief The extent to which a Node's maxRadius_ is increasing. A value of 0
+//             /// means the Node's maxRadius_ was increased the last time an element was added,
+//             /// while a negative value i means the Node hasn't expanded the last -i times
+//             /// an element was added.
+//             int activity_;
+// #endif
         };
 
         /// \brief The data structure containing the elements stored in this structure.
@@ -792,10 +793,10 @@ namespace ompl
         GreedyKCenters<_T> pivotSelector_;
         /// \brief Cache of removed elements.
         std::unordered_set<const _T *> removed_;
-#ifdef GNAT_SAMPLER
-        /// \brief Estimated dimension of the local free space.
-        double estimatedDimension_;
-#endif
+// #ifdef GNAT_SAMPLER
+//         /// \brief Estimated dimension of the local free space.
+//         double estimatedDimension_;
+// #endif
 
         /// \cond IGNORE
         // used to cycle through children of a node in different orders
