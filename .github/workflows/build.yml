@@ -13,7 +13,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        # os: [windows-latest, macos-13, macos-latest]
+        # os: [windows-latest, ubuntu-22.04, ubuntu-latest, macos-13, macos-latest]
         os: [ubuntu-latest]
         python-version: ['3.12']
     steps:
@@ -39,7 +39,7 @@ jobs:
           output-dir: dist
         env:
           CIBW_BEFORE_ALL_LINUX: >
-            yum install eigen3-dev
+            yum install eigen3-dev &&
             yum install boost-devel
 
           CIBW_BEFORE_ALL_MACOS: >
