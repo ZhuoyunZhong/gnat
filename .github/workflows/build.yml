@@ -14,7 +14,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest, windows-latest] # ubuntu-latest]
+        os: [macos-latest, windows-latest, ubuntu-latest]
         python-version: ['3.12']
     steps:
       - uses: actions/checkout@v4
@@ -27,7 +27,7 @@ jobs:
       - name: Upgrade pip and install dependencies
         run: |
           pip install --upgrade pip
-          pip install cibuildwheel pytest numpy setuptools twine
+          pip install pytest numpy setuptools twine
 
       - name: Install pybind11
         run: |
