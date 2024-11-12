@@ -1,12 +1,6 @@
 cmake_minimum_required(VERSION 3.12)
 project(gnat)
 
-# Use the FindBoost provided by CMake, rather than the one provided by Boost
-# (for CMake >=3.30).
-if (${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.30")
-    cmake_policy(SET CMP0167 OLD)
-endif()
-
 include(GNUInstallDirs)  # For standard installation directories
 
 # Set C++ standard
@@ -22,21 +16,18 @@ execute_process(
 list(APPEND CMAKE_PREFIX_PATH ${PYBIND11_CMAKE_DIR})
 find_package(pybind11 REQUIRED)
 
-# Find Boost and Eigen3
-set(Boost_USE_MULTITHREADED ON)
-find_package(Boost REQUIRED COMPONENTS serialization filesystem system program_options)
-find_package(Eigen3 REQUIRED)
+# Find Eigen3
+# find_package(Eigen3 REQUIRED)
+set(EIGEN3_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/external/eigen-3.4.0")
 
 # Include directories
 include_directories(
-    ${EIGEN3_INCLUDE_DIRS}
-    ${Boost_INCLUDE_DIRS}
+    ${EIGEN3_INCLUDE_DIR}
     ${PROJECT_SOURCE_DIR}
 )
 
 # Source files
 set(SOURCES
-    ompl/util/src/RandomNumbers.cpp
     bindings/py_gnat.cpp
 )
 
