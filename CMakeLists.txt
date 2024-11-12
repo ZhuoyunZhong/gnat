@@ -22,9 +22,9 @@ execute_process(
 list(APPEND CMAKE_PREFIX_PATH ${PYBIND11_CMAKE_DIR})
 find_package(pybind11 REQUIRED)
 
+# Find Boost and Eigen3
 set(Boost_USE_MULTITHREADED ON)
 find_package(Boost REQUIRED COMPONENTS serialization filesystem system program_options)
-
 find_package(Eigen3 REQUIRED)
 
 # Include directories
