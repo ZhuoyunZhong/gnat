@@ -33,12 +33,14 @@ jobs:
         run: |
           pip install pybind11[global]
 
+      - name: Install cibuildwheel
+        run: |
+          pip install cibuildwheel
+
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2.13.0
-        with:
-          output-dir: dist
+        run: |
+          cibuildwheel --output-dir dist
         env:
-          CIBW_PLATFORM: ${{ matrix.os == 'windows-latest' && 'windows' || matrix.os == 'macos-latest' && 'macos' || 'linux' }}
           CIBW_BUILD: "cp38-* cp39-* cp310-* cp311-* cp312-*"
 
       # - name: Install package from source
