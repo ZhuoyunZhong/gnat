@@ -38,7 +38,6 @@ jobs:
         with:
           output-dir: dist
         env:
-          CIBW_PLATFORM: "linux"
           CIBW_BUILD: "cp38-* cp39-* cp310-* cp311-* cp312-*"
 
       # - name: Install package from source
