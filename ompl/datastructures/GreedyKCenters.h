@@ -122,6 +122,10 @@ namespace ompl
                 dists(j, i) = distFun_(data[j], center);
         }
 
+        void setSeed(unsigned int seed) {
+            rng_.seed(seed);
+        }
+
     protected:
         /** \brief The used distance function */
         DistanceFunction distFun_;

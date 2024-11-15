@@ -34,6 +34,31 @@
 
 /* Author: Mark Moll, Bryant Gipson */
 
+/*********************************************************************
+ * Modified from the original code as stated above.
+ * Modifications are made for the purpose of using the GNAT data
+ * with python bindings.
+ * 
+ * Modification 1: Added a map from data pointer to a unique index.
+ * Added nearest neighbors functions that output both the indices 
+ * and the data.
+ * Note: this assumes that the data is hashable.
+ * 
+ * Modification 2: Added serialization and deserialization
+ * functions to save and load the GNAT data structure.
+ * Note: this assumes that the data is serializable.
+ * 
+ * Modification 3: Added setSeed function to set the seed of the
+ * GreedyKCenters object.
+ * 
+ * Modification 4: Commented out the GNAT_SAMPLER code as it is not
+ * needed for the purpose of finding nearest neighbors.
+ * 
+ * TODO: Right now when the data is removed, the map from this data
+ * to index is still maintained in the dataToIndex_ map.
+ * This could be optimized in the future.
+*********************************************************************/
+
 #ifndef OMPL_DATASTRUCTURES_NEAREST_NEIGHBORS_GNAT_
 #define OMPL_DATASTRUCTURES_NEAREST_NEIGHBORS_GNAT_
 
@@ -49,6 +74,7 @@
 #include <unordered_set>
 #include <utility>
 // #include "ompl/util/Exception.h"
+# include <memory>
 
 namespace ompl
 {
@@ -89,6 +115,10 @@ namespace ompl
             }
         };
         using NodeQueue = std::priority_queue<NodeDist, std::vector<NodeDist>, NodeDistCompare>;
+
+        // the internal data structure for ouputting the index of added data.
+        // assume it is a hashaable type (pointer)
+        std::unordered_map<_T, unsigned> dataToIndex_;
         /// \endcond
 
     public:
@@ -125,6 +155,10 @@ namespace ompl
             if (tree_)
                 rebuildDataStructure();
         }
+        void setSeed(size_t seed)
+        {
+            pivotSelector_.setSeed(seed);
+        }
 
         void clear() override
         {
@@ -157,6 +191,7 @@ namespace ompl
                 tree_ = new Node(degree_, maxNumPtsPerLeaf_, data);
                 size_ = 1;
             }
+            dataToIndex_[data] = dataToIndex_.size();
         }
         void add(const std::vector<_T> &data) override
         {
@@ -164,15 +199,23 @@ namespace ompl
                 NearestNeighbors<_T>::add(data);
             else if (!data.empty())
             {
-                tree_ = new Node(degree_, maxNumPtsPerLeaf_, data[0]);
-// #ifdef GNAT_SAMPLER
-//                 tree_->subtreeSize_ = data.size();
-// #endif
-                tree_->data_.insert(tree_->data_.end(), data.begin() + 1, data.end());
-                size_ += data.size();
-                if (tree_->needToSplit(*this))
-                    tree_->split(*this);
+                addAndBuild(data);
+                for (const auto &d : data)
+                    dataToIndex_[d] = dataToIndex_.size();
             }
+        }
+
+        void addAndBuild(const std::vector<_T> &data)
+        {
+            // Tree should have been destroyed before calling this function
+            tree_ = new Node(degree_, maxNumPtsPerLeaf_, data[0]);
+// #ifdef GNAT_SAMPLER
+//             tree_->subtreeSize_ = data.size();
+// #endif
+            tree_->data_.insert(tree_->data_.end(), data.begin() + 1, data.end());
+            size_ += data.size();
+            if (tree_->needToSplit(*this))
+                tree_->split(*this);
         }
         /// \brief Rebuild the internal data structure.
         void rebuildDataStructure()
@@ -180,7 +223,8 @@ namespace ompl
             std::vector<_T> lst;
             list(lst);
             clear();
-            add(lst);
+            // add(lst);
+            addAndBuild(lst);
         }
         /// \brief Remove data from the tree.
         /// The element won't actually be removed immediately, but just marked
@@ -245,6 +289,33 @@ namespace ompl
             }
         }
 
+        /// Return the nearest neighbors with their indices
+        std::tuple<unsigned, _T> nearestIndex(const _T &data) const
+        {
+            _T nearestData = nearest(data);
+            return {dataToIndex_.at(nearestData), nearestData};
+        }
+        void nearestKIndices(const _T &data, std::size_t k, std::vector<unsigned> &indices, std::vector<_T> &nbh) const
+        {
+            nearestK(data, k, nbh);
+            indices.clear();
+            indices.reserve(nbh.size());
+            for (const auto &n : nbh)
+            {
+                indices.push_back(dataToIndex_.at(n));
+            }
+        }
+        void nearestRIndices(const _T &data, double radius, std::vector<unsigned> &indices, std::vector<_T> &nbh) const
+        {
+            nearestR(data, radius, nbh);
+            indices.clear();
+            indices.reserve(nbh.size());
+            for (const auto &n : nbh)
+            {
+                indices.push_back(dataToIndex_.at(n));
+            }
+        }
+
         std::size_t size() const override
         {
             return size_;
@@ -270,20 +341,280 @@ namespace ompl
         }
 
         /// \brief Print a GNAT structure (mostly useful for debugging purposes).
+        /// rewrite for serialization purpose
         friend std::ostream &operator<<(std::ostream &out, const NearestNeighborsGNAT<_T> &gnat)
         {
-            if (gnat.tree_)
+            // GNAT parameters
+            out << "GNAT parameters:" << "\n";
+            out << "degree: " << gnat.degree_ << "\n";
+            out << "minDegree: " << gnat.minDegree_ << "\n";
+            out << "maxDegree: " << gnat.maxDegree_ << "\n";
+            out << "maxNumPtsPerLeaf: " << gnat.maxNumPtsPerLeaf_ << "\n";
+            out << "size: " << gnat.size_ << "\n";
+            out << "rebuildSize: " << gnat.rebuildSize_ << "\n";
+            out << "removedCacheSize: " << gnat.removedCacheSize_ << "\n";
+            out << "offset: " << gnat.offset_ << "\n";
+            out << "\n";
+
+            // print each data in dataToIndex_
+            out << "Dataset:" << "\n";
+            for (const auto &d : gnat.dataToIndex_)
             {
-                out << *gnat.tree_;
-                if (!gnat.removed_.empty())
+                if constexpr (std::is_pointer<_T>::value || std::is_same<_T, std::shared_ptr<typename _T::element_type>>::value)
                 {
-                    out << "Elements marked for removal:\n";
-                    for (const auto &elt : gnat.removed_)
-                        out << *elt << '\t';
-                    out << std::endl;
+                    if (d.first)  // Check if the pointer is non-null before dereferencing
+                        out << d.second << "\n" << *d.first << "\n";
+                    else
+                        out << d.second << "\n" << "null" << "\n";
+                }
+                else
+                {
+                    out << d.second << " " << d.first << "\n";
                 }
             }
+            out << "\n";
+
+            // print removed set
+            out << "Removed:" << "\n";
+            // removed_ is *
+            for (const auto &d : gnat.removed_)
+            {
+                out << gnat.dataToIndex_.at(*d) << "\n";
+            }
+            out << "\n";
+
+            // print the tree
+            out << "Tree:" << "\n";
+            if (gnat.tree_)
+            {
+                gnat.serializeNode(out, *gnat.tree_);
+            }
             return out;
+        }
+        void serializeNode(std::ostream &out, const Node &node) const
+        {
+            out << "N: ";
+// #ifdef GNAT_SAMPLER
+//             out << "\n: " << node.subtreeSize_;
+//             out << "\n: " << node.activity_;
+// #endif
+            out << "\n: " << node.degree_;
+            out << "\n: " << node.minRadius_;
+            out << "\n: " << node.maxRadius_;
+            out << "\n: ";
+            for (auto minR : node.minRange_)
+                out << minR << ' ';
+            out << "\n: ";
+            for (auto maxR : node.maxRange_)
+                out << maxR << ' ';
+            out << "\n: " << dataToIndex_.at(node.pivot_);
+            out << "\n: ";
+            for (auto &data : node.data_)
+                out << dataToIndex_.at(data) << ' ';
+
+            out << "\n: ";
+            for (auto &child : node.children_)
+                out << child << ' ';
+            out << "\n";
+            for (auto &child : node.children_)
+            {
+                out << "\n";
+                serializeNode(out, *child);
+            }
+//             out << "NodeParams: ";
+// // #ifdef GNAT_SAMPLER
+// //             out << "\nsubtreeSize: " << node.subtreeSize_;
+// //             out << "\nactivity: " << node.activity_;
+// // #endif
+//             out << "\ndeg: " << node.degree_;
+//             out << "\nminRad: " << node.minRadius_;
+//             out << "\nmaxRad: " << node.maxRadius_;
+//             out << "\nminRan: ";
+//             for (auto minR : node.minRange_)
+//                 out << minR << ' ';
+//             out << "\nmaxRan: ";
+//             for (auto maxR : node.maxRange_)
+//                 out << maxR << ' ';
+//             out << "\npivot: " << dataToIndex_.at(node.pivot_);
+//             out << "\ndata: ";
+//             for (auto &data : node.data_)
+//                 out << dataToIndex_.at(data) << ' ';
+
+//             out << "\nchildren: ";
+//             for (auto &child : node.children_)
+//                 out << child << ' ';
+//             out << "\n";
+//             for (auto &child : node.children_)
+//             {
+//                 out << "\n";
+//                 serializeNode(out, *child);
+//             }
+        }
+
+        /// implement for deserialization
+        friend std::istream &operator>>(std::istream &in, ompl::NearestNeighborsGNAT<_T> &gnat)
+        {
+            // Clear any existing data
+            gnat.clear();
+
+            // Read GNAT parameters
+            std::string line, key;
+            double tmpDouble;
+
+            // Set GNAT parameters
+            std::getline(in, line); // Skip "GNAT parameters:"
+            in >> key >> gnat.degree_;
+            in >> key >> gnat.minDegree_;
+            in >> key >> gnat.maxDegree_;
+            in >> key >> gnat.maxNumPtsPerLeaf_;
+            in >> key >> gnat.size_;
+            in >> key >> gnat.rebuildSize_;
+            in >> key >> gnat.removedCacheSize_;
+            in >> key >> gnat.offset_;
+
+            // Read dataset
+            std::getline(in, line); // Skip previous line
+            std::getline(in, line); // Skip empty line
+            std::getline(in, line); // Skip "Dataset:"
+            // build a temporary index to data map
+            std::unordered_map<unsigned, _T> indexToData;
+            while (std::getline(in, line) && !line.empty())
+            {
+                std::istringstream issIndex(line);
+                unsigned index;
+                issIndex >> index;
+
+                std::getline(in, line);
+                std::istringstream iss(line);
+                _T data;
+                if constexpr (std::is_pointer<_T>::value)
+                {
+                    iss >> *data;
+                    gnat.dataToIndex_[data] = index;
+                    indexToData[index] = data;
+                }
+                else if constexpr (std::is_same<_T, std::shared_ptr<typename _T::element_type>>::value)
+                {
+                    // Use make_shared for std::shared_ptr types
+                    if (line.find("null") == std::string::npos)
+                    {
+                        data = _T(new typename _T::element_type());
+                        iss >> *data;
+                        gnat.dataToIndex_[data] = index;
+                        indexToData[index] = data;
+                    }
+                }
+                else
+                {
+                    // For non-pointer types, directly assign the value
+                    issIndex >> data;
+                    gnat.dataToIndex_[data] = index;
+                    indexToData[index] = data;
+                }
+            }
+
+            // Read removed elements
+            std::getline(in, line); // Skip "Removed:"
+            std::vector<unsigned> removedIndices;
+            while (std::getline(in, line) && !line.empty())
+            {
+                unsigned index;
+                std::istringstream iss(line);
+                iss >> index;
+                // Postpone actually setting the element as removed 
+                // until the tree is reconstructed
+                removedIndices.push_back(index);
+            }
+
+            // Reconstruct the tree recursively
+            std::getline(in, line); // Skip "Tree:"
+            if (std::getline(in, line) && line.find("N") != std::string::npos)
+            {
+                std::istringstream iss(line);
+                gnat.tree_ = new Node(0, 0, _T());
+                gnat.deserializeNode(in, *gnat.tree_, indexToData);
+            }
+
+            // Mark the elements as removed
+            for (const auto &index : removedIndices)
+            {
+                _T data = indexToData.at(index);
+                gnat.remove(data);
+            }
+
+            return in;
+        }
+        void deserializeNode(std::istream &in, Node &node, std::unordered_map<unsigned, _T> &indexToData)
+        {
+            std::string line, key;
+            std::string tempValue;  // for reading inf and -inf
+// #ifdef GNAT_SAMPLER
+//             in >> key >> node.subtreeSize_;
+//             in >> key >> node.activity_;
+// #endif
+            // Read parameters
+            in >> key >> node.degree_;
+            in >> key >> tempValue;
+            node.minRadius_ = stringToDouble(tempValue);
+            in >> key >> tempValue;
+            node.maxRadius_ = stringToDouble(tempValue);
+            // Read minRange
+            std::getline(in, line);  // Skip previous line
+            std::getline(in, line);
+            std::istringstream iss1(line);
+            iss1 >> key;
+            node.minRange_.clear();
+            while (iss1 >> tempValue)
+                node.minRange_.push_back(stringToDouble(tempValue));
+            // Read maxRange
+            std::getline(in, line);
+            std::istringstream iss2(line);
+            iss2 >> key;
+            node.maxRange_.clear();
+            while (iss2 >> tempValue)
+                node.maxRange_.push_back(stringToDouble(tempValue));
+
+            // Read pivot
+            unsigned index;
+            in >> key >> index;
+            node.pivot_ = indexToData.at(index);
+
+            // Read data
+            std::getline(in, line);  // Skip previous line
+            std::getline(in, line);
+            std::istringstream iss3(line);
+            iss3 >> key;
+            node.data_.clear();
+            while (iss3 >> index)
+            {
+                node.data_.push_back(indexToData.at(index));
+            }
+
+            // Read children
+            std::string address;
+            std::getline(in, line);
+            std::istringstream iss4(line);
+            iss4 >> key;
+            node.children_.clear();
+            while (iss4 >> address)
+            {
+                std::getline(in, line);  // Skip empty line
+                std::getline(in, line);  // Skip NodeParams
+                Node *child = new Node(0, 0, _T());
+                deserializeNode(in, *child, indexToData);
+                node.children_.push_back(child);
+            }
+        }
+        double stringToDouble(const std::string &str)
+        {
+            if (str == "inf")
+                return std::numeric_limits<double>::infinity();
+            else if (str == "-inf")
+                return -std::numeric_limits<double>::infinity();
+            else
+            {
+                return std::stod(str);
+            }
         }
 
         // for debugging purposes
@@ -703,39 +1034,48 @@ namespace ompl
                     child->list(gnat, data);
             }
 
+            /// No need to actually implement this
             friend std::ostream &operator<<(std::ostream &out, const Node &node)
             {
-                out << "\ndegree:\t" << node.degree_;
-                out << "\nminRadius:\t" << node.minRadius_;
-                out << "\nmaxRadius:\t" << node.maxRadius_;
-                out << "\nminRange:\t";
-                for (auto minR : node.minRange_)
-                    out << minR << '\t';
-                out << "\nmaxRange: ";
-                for (auto maxR : node.maxRange_)
-                    out << maxR << '\t';
-                out << "\npivot:\t" << node.pivot_;
-                out << "\ndata: ";
-                for (auto &data : node.data_)
-                    out << data << '\t';
-                out << "\nthis:\t" << &node;
-// #ifdef GNAT_SAMPLER
-//                 out << "\nsubtree size:\t" << node.subtreeSize_;
-//                 out << "\nactivity:\t" << node.activity_;
-// #endif
-                out << "\nchildren:\n";
-                for (auto &child : node.children_)
-                    out << child << '\t';
-                out << '\n';
-                for (auto &child : node.children_)
-                    out << *child << '\n';
+//                 out << "Node: " << &node;
+//                 out << "\nNode parameters: ";
+//                 out << "\ndegree: " << node.degree_;
+//                 out << "\nminRadius: " << node.minRadius_;
+//                 out << "\nmaxRadius: " << node.maxRadius_;
+//                 out << "\nminRange: ";
+//                 for (auto minR : node.minRange_)
+//                     out << minR << ' ';
+//                 out << "\nmaxRange: ";
+//                 for (auto maxR : node.maxRange_)
+//                     out << maxR << ' ';
+//                 out << "\npivot: " << node.pivot_;
+//                 out << "\ndata: ";
+//                 for (auto &data : node.data_)
+//                     out << data << ' ';
+// // #ifdef GNAT_SAMPLER
+// //                 out << "\nsubtree size: " << node.subtreeSize_;
+// //                 out << "\nactivity: " << node.activity_;
+// // #endif
+//                 out << "\nchildren:\n";
+//                 for (auto &child : node.children_)
+//                     out << child << ' ';
+//                 out << "\n";
+//                 for (auto &child : node.children_)
+//                     out << "\n" << child;
                 return out;
+            }
+
+            /// No need to actually implement this
+            friend std::istream &operator>>(std::istream &in, Node &node)
+            {
+                return in;
             }
 
             /// Number of child nodes
             unsigned int degree_;
             /// Data element stored in this Node
-            const _T pivot_;
+            _T pivot_;
+            // const _T pivot_;
             /// Minimum distance between the pivot element and the elements stored in data_
             double minRadius_;
             /// Maximum distance between the pivot element and the elements stored in data_
