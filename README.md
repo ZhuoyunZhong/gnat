@@ -14,6 +14,12 @@ Paper references:
 
 [B. Gipson, M. Moll, and L.E. Kavraki, Resolution independent density estimation for motion planning in high-dimensional spaces, in IEEE Intl. Conf. on Robotics and Automation, 2013.](https://moll.ai/publications/gipson2013resolution-independent-density-estimation.pdf)
 
+## Install GNAT
+
+```
+pip install gnat
+```
+
 ## Running GNAT
 
 Currently, GNAT supports data defined as a list of a 1-D numpy array. To build a GNAT, you first need to define a distance function by calling `set_distance_function()`. You may then add a list of data at once and build GNAT nearest neighbor structure by calling `add_list()`. Once GNAT is built, it provides nearest k neighbors search `nearest_k()` and nearest distance r search `nearest_r()`. Here is an example:
