@@ -53,10 +53,6 @@
  * 
  * Modification 4: Commented out the GNAT_SAMPLER code as it is not
  * needed for the purpose of finding nearest neighbors.
- * 
- * TODO: Right now when the data is removed, the map from this data
- * to index is still maintained in the dataToIndex_ map.
- * This could be optimized in the future.
 *********************************************************************/
 
 #ifndef OMPL_DATASTRUCTURES_NEAREST_NEIGHBORS_GNAT_
@@ -118,6 +114,7 @@ namespace ompl
 
         // the internal data structure for ouputting the index of added data.
         // assume it is a hashaable type (pointer)
+        std::size_t nextDataIndex_ = 0;
         std::unordered_map<_T, unsigned> dataToIndex_;
         /// \endcond
 
@@ -191,7 +188,7 @@ namespace ompl
                 tree_ = new Node(degree_, maxNumPtsPerLeaf_, data);
                 size_ = 1;
             }
-            dataToIndex_[data] = dataToIndex_.size();
+            dataToIndex_[data] = nextDataIndex_++;
         }
         void add(const std::vector<_T> &data) override
         {
@@ -201,7 +198,7 @@ namespace ompl
             {
                 addAndBuild(data);
                 for (const auto &d : data)
-                    dataToIndex_[d] = dataToIndex_.size();
+                    dataToIndex_[d] = nextDataIndex_++;
             }
         }
 
@@ -354,6 +351,7 @@ namespace ompl
             out << "rebuildSize: " << gnat.rebuildSize_ << "\n";
             out << "removedCacheSize: " << gnat.removedCacheSize_ << "\n";
             out << "offset: " << gnat.offset_ << "\n";
+            out << "nextDataIndex: " << gnat.nextDataIndex_ << "\n";
             out << "\n";
 
             // print each data in dataToIndex_
@@ -471,6 +469,7 @@ namespace ompl
             in >> key >> gnat.rebuildSize_;
             in >> key >> gnat.removedCacheSize_;
             in >> key >> gnat.offset_;
+            in >> key >> gnat.nextDataIndex_;
 
             // Read dataset
             std::getline(in, line); // Skip previous line

@@ -25,7 +25,7 @@ def sample_rotation():
 
 
 def test_gnat(data_points, query_point, k, radius):
-    # Initialize OMPL GNAT with the custom distance function
+    # Initialize GNAT with the custom distance function
     nn = gnat.NearestNeighborsGNAT()
     nn.set_distance_function(se3_distance)
 
@@ -35,7 +35,7 @@ def test_gnat(data_points, query_point, k, radius):
     nn.add_list(data_points)
 
     build_time = time.time() - start_time
-    print(f"OMPL GNAT build time: {build_time:.6f} seconds")
+    print(f"GNAT build time: {build_time:.6f} seconds")
 
     # Test serialization and deserialization
     nn.save(os.path.dirname(os.path.abspath(__file__)) + "/gnat.dat")
@@ -48,19 +48,9 @@ def test_gnat(data_points, query_point, k, radius):
     nn.load(os.path.dirname(os.path.abspath(__file__)) + "/gnat.dat")
 
     load_time = time.time() - start_time
-    print(f"OMPL GNAT load time: {load_time:.6f} seconds")
+    print(f"GNAT load time: {load_time:.6f} seconds")
 
-    # Perform nearest neighbor search with OMPL GNAT
-    start_time = time.time()
-
-    index, nearest = nn.nearest(query_point)
-    nearest = np.array(nearest)
-
-    search_time = time.time() - start_time
-    print(f"OMPL GNAT nearest neighbor search time: {search_time:.6f} seconds")
-    print(f"Nearest neighbor found by OMPL GNAT: \n {index}: {nearest}")
-
-    # Perform k-nearest neighbors search with OMPL GNAT
+    # Perform k-nearest neighbors search with GNAT
     start_time = time.time()
 
     indices, nearest_k = nn.nearest_k(query_point, k)
@@ -70,19 +60,19 @@ def test_gnat(data_points, query_point, k, radius):
 
     dists = [se3_distance(query_point, data_points[i]) for i in indices]
     print(
-        f"OMPL GNAT {k}-nearest neighbors search time: {k_search_time:.6f} seconds"
+        f"GNAT {k}-nearest neighbors search time: {k_search_time:.6f} seconds"
     )
     for i in range(k):
         print(f"Dist: {dists[i]:.4f}- {indices[i]}: {data_points[indices[i]]}")
 
-    # Perform range search with OMPL GNAT
+    # Perform range search with GNAT
     start_time = time.time()
 
     indices, nearest_r = nn.nearest_r(query_point, radius)
     nearest_r = np.array(nearest_r)
 
     range_search_time = time.time() - start_time
-    print(f"OMPL GNAT range search time: {range_search_time:.6f} seconds")
+    print(f"GNAT range search time: {range_search_time:.6f} seconds")
     for i in range(len(nearest_r)):
         print(f"{indices[i]}: {nearest_r[i]}")
 
@@ -96,13 +86,13 @@ if __name__ == "__main__":
     data_points = np.array(
         [
             [*np.random.uniform(-1, 1, 3), *sample_rotation()]
-            for _ in range(100)
+            for _ in range(10000)
         ]
     )
 
     # Define the query point
     query_point = np.array([0, 0, 0, 0, 0, 0, 1])
     k = 5
-    radius = 2
+    radius = 0.5
 
     test_gnat(data_points, query_point, k, radius)

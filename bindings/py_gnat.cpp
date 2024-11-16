@@ -37,6 +37,7 @@ struct vectorSerializable : public std::vector<T>
         return is;
     }
 };
+
 // GNAT is more convenient to be used with shared pointers
 template <typename T>
 using vectorSerializablePtr = std::shared_ptr<vectorSerializable<T>>;
@@ -168,21 +169,28 @@ PYBIND11_MODULE(_gnat, m)
             });
         })
         .def("set_seed", &GNATVector::setSeed)
-        .def("add", [](GNATVector &self, py::object data) {
+        
+        // Modified 'add' function to return the pointer
+        .def("add", [](GNATVector &self, py::object data) -> std::shared_ptr<point> {
             // Convert the Python object to PointPtr
             auto ptr = convert_to_point_ptr(data);
             self.add(ptr);
+            return ptr; // Return the shared_ptr to Python
         }, py::arg("data"))
-        .def("add_list", [](GNATVector &self, py::object data_list) {
+
+        // Modified 'add_list' function to return a list of pointers
+        .def("add_list", [](GNATVector &self, py::object data_list) -> std::vector<std::shared_ptr<point>> {
             // Convert the Python object to vector<PointPtr>
             auto data_vec = convert_to_point_ptr_list(data_list);
             self.add(data_vec);
+            return data_vec; // Return the list of shared_ptr to Python
         }, py::arg("data_list"))
-        .def("remove", [](GNATVector &self, py::object data) {
-            // Convert the Python object to PointPtr
-            auto ptr = convert_to_point_ptr(data);
+
+        // Modified 'remove' function to take a pointer
+        .def("remove", [](GNATVector &self, std::shared_ptr<point> ptr) -> bool {
             return self.remove(ptr);
-        }, py::arg("data"))
+        }, py::arg("point_ptr"), "Remove a point using its pointer/handle.")
+
         .def("clear", &GNATVector::clear)
         .def("size", &GNATVector::size)
         .def("nearest", [](GNATVector &self, py::object data) {

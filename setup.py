@@ -13,7 +13,7 @@ else:  # Linux and other platforms
 
 setup(
     name="gnat",
-    version="0.1.1",
+    version="0.2.0",
     description="Python bindings for the GNAT data structure",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",

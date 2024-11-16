@@ -37,17 +37,6 @@ def test_balltree(data_points, query_point, k, radius):
     # For search
     query_array = np.array([query_point])
 
-    # Perform nearest neighbor search
-    start_time = time.time()
-
-    index = nn.query(query_array, k=1, return_distance=False)[0][0]
-
-    search_time = time.time() - start_time
-    print(f"Balltree nearest neighbor search time: {search_time:.6f} seconds")
-    print(
-        f"Nearest neighbor found by Balltree: \n {index}: {data_points[index]}"
-    )
-
     # Perform k-nearest neighbors search
     start_time = time.time()
 
