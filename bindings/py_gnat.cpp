@@ -85,11 +85,11 @@ std::vector<std::shared_ptr<point>> convert_to_point_ptr_list(py::object data) {
             throw std::invalid_argument("add_list expects a 2D NumPy array or a list of 1D arrays/lists.");
         }
 
-        ssize_t num_rows = arr.shape(0);
-        ssize_t num_cols = arr.shape(1);
+        auto num_rows = arr.shape(0);
+        auto num_cols = arr.shape(1);
 
         data_vec.reserve(num_rows);
-        for (ssize_t i = 0; i < num_rows; ++i) {
+        for (auto i = 0; i < num_rows; ++i) {
             std::vector<double> vec(num_cols);
             std::memcpy(vec.data(), arr.data(i, 0), num_cols * sizeof(double));
             data_vec.emplace_back(std::make_shared<point>(vec));
